@@ -1,17 +1,28 @@
+import os
+
 import telebot
 from telebot import types
 
+from dotenv import load_dotenv
 
-bot = telebot.TeleBot("1919927766:AAGH0dBYZ4yuw46vgw5L5F4uw6jKE5FPzHI")
+
+load_dotenv()
+
+bot = telebot.TeleBot(os.getenv("TOKEN"))
 bot.remove_webhook()
 
 @bot.message_handler(commands=["start"])
-def get_text_messages(message):
+def get_text_messages(message, data="start"):
     keyboard_main = types.InlineKeyboardMarkup()
 
+    if data == "start":
+        message_content = "Привет! Добро пожаловать в школу Антарес.\nНаши менеджеры уже зарегистрировали обращение от тебя и спешат ответить, однако пока не стоит тратить время зря: изучи возможности нашего бота-помощника ниже.\nМы ответим как можно скорее!🚀"
+    elif data == "back":
+        message_content = "Пока наши менеджеры спешат закончить общение с другими учениками и ответить тебе, изучи функционал бота-помощника.\n\nОбрати внимание на прохождение небольшого опроса по кнопке ниже, твои ответы значительно ускорят работу наших менеджеров🚀 Мы напишем как можно скорее!"
+
     btn_my_site = types.InlineKeyboardButton(text="Наш сайт", url="https://antarestudy.ru")
-    btn_info = types.InlineKeyboardButton(text="Информация о школе", callback_data="info")
-    btn_manager = types.InlineKeyboardButton(text="Связаться с менеджером", callback_data="manager")
+    btn_info = types.InlineKeyboardButton(text="Информация о курсах", callback_data="info")
+    btn_manager = types.InlineKeyboardButton(text="Пройти опрос!", callback_data="manager")
 
     keyboard_main.add(btn_my_site)
     keyboard_main.add(btn_info)
@@ -19,10 +30,7 @@ def get_text_messages(message):
 
     return bot.send_message(
         message.chat.id,
-        "Здравствуйте! Выберите, что Вас интересует:"
-        "\n 1) Информация о школе."
-        "\n 2) Связаться с менеджером."
-        "\n\n Также Вы можете перейти на наш сайт и ознакомиться со всем материалом там.",
+        message_content,
         reply_markup = keyboard_main
     )
 
@@ -35,19 +43,15 @@ def get_info(message):
     btn_physics_ege = types.InlineKeyboardButton(text="Физика ЕГЭ", callback_data="physics_ege")
     btn_back = types.InlineKeyboardButton(text="Назад", callback_data="back")
 
-    keyboard_info.add(btn_math_oge)
     keyboard_info.add(btn_math_ege)
-    keyboard_info.add(btn_physics_oge)
     keyboard_info.add(btn_physics_ege)
+    keyboard_info.add(btn_math_oge)
+    keyboard_info.add(btn_physics_oge)
     keyboard_info.add(btn_back)
 
     return bot.send_message(
         message.chat.id,
-        "Выберите интересующий Вас курс:"
-        "\n 1) Математика ОГЭ."
-        "\n 2) Математика ЕГЭ."
-        "\n 3) Физика ОГЭ."
-        "\n 4) Физика ЕГЭ.",
+        "Выбери курс, который тебе интересен👇🏻",
         reply_markup = keyboard_info
     )
 
@@ -61,12 +65,25 @@ def get_subject_info(message, subject):
     keyboard_subject.add(btn_url)
     keyboard_subject.add(btn_back)
 
+
+
     bot.send_message(
         message.chat.id,
-        "Всю информацию Вы можете найти на нашем сайте и в pdf файле",
+        "Наш курс поможет тебе вместе с классными преподавателями в дружной группе получить знания по предмету и уверено подготовится к сдаче экзамена!😄"
+        "\n\nЗагляни в учебный план из файла ниже, чтобы узнать подробно о распределении тем на занятиях, а также обрати внимание на скрин с тарифами, которые можно выбрать при покупке курса."
+        "\n\nБолее подробное описание ты можешь прочитать на страничке курса на нашем сайте:",
         reply_markup=keyboard_subject
     )
-    return bot.send_document(message.chat.id, doc)
+    bot.send_document(message.chat.id, doc)
+    if "Здорово, ты учишься" not in message.json["text"]:
+        return bot.send_message(
+            message.chat.id,
+            "Если у тебя остались вопросы, не стесняйся их задавать здесь нашему менеджеру!"
+        )
+    return bot.send_message(
+        message.chat.id,
+        "Почему ты обратил внимание именно на нашу школу?",
+    )
 
 def get_age(message):
     keyboard_age = types.InlineKeyboardMarkup()
@@ -75,20 +92,22 @@ def get_age(message):
     btn_16 = types.InlineKeyboardButton(text="16", callback_data="16")
     btn_17 = types.InlineKeyboardButton(text="17", callback_data="17")
     btn_18 = types.InlineKeyboardButton(text="18", callback_data="18")
+    btn_poll_end = types.InlineKeyboardButton(text="Закончить опрос", callback_data="poll_end")
 
     keyboard_age.add(btn_15)
     keyboard_age.add(btn_16)
     keyboard_age.add(btn_17)
     keyboard_age.add(btn_18)
+    keyboard_age.add(btn_poll_end)
+
 
     bot.send_message(
         message.chat.id,
-        "Наш менеджер скоро с Вами свяжется. А пока можете рассказать о себе,"
-        "чтобы было проще Вам помочь."
+        "Наш менеджер скоро с тобой свяжется. А пока можешь рассказать о себе, чтобы нам было проще."
     )
     return bot.send_message(
         message.chat.id,
-        "Укажите Ваш возраст.",
+        "Сколько тебе лет?",
         reply_markup=keyboard_age
     )
 
@@ -106,6 +125,7 @@ def get_timezone(message, age):
     btn_7 = types.InlineKeyboardButton(text="МСК +7", callback_data="7")
     btn_8 = types.InlineKeyboardButton(text="МСК +8", callback_data="8")
     btn_9 = types.InlineKeyboardButton(text="МСК +9", callback_data="9")
+    btn_poll_end = types.InlineKeyboardButton(text="Закончить опрос", callback_data="poll_end")
 
     keyboard_timezone.add(btn_neg1)
     keyboard_timezone.add(btn_0)
@@ -118,55 +138,57 @@ def get_timezone(message, age):
     keyboard_timezone.add(btn_7)
     keyboard_timezone.add(btn_8)
     keyboard_timezone.add(btn_9)
+    keyboard_timezone.add(btn_poll_end)
 
     return bot.send_message(
         message.chat.id,
-        f"Отлично, Ваш возраст {age} лет!"
-        "\n\nУкажите Ваш часовой пояс.",
+        f"Здорово, тебе {age} лет!"
+        "\n\n А теперь выбери свой часовой пояс:",
         reply_markup=keyboard_timezone
     )
 
-def get_exam(message, timezone):
+def get_grade(message, timezone):
+    keyboard_grade = types.InlineKeyboardMarkup()
+
+    btn_9 = types.InlineKeyboardButton(text="9", callback_data="9 grade")
+    btn_10 = types.InlineKeyboardButton(text="10", callback_data="10 grade")
+    btn_11 = types.InlineKeyboardButton(text="11", callback_data="11 grade")
+    btn_poll_end = types.InlineKeyboardButton(text="Закончить опрос", callback_data="poll_end")
+
+    keyboard_grade.add(btn_9)
+    keyboard_grade.add(btn_10)
+    keyboard_grade.add(btn_11)
+    keyboard_grade.add(btn_poll_end)
+
+    return bot.send_message(
+        message.chat.id,
+        f"Здорово, твоя разница с Москвой в {timezone} час/а/ов!"
+        "\n\nВ каком классе ты учишься?",
+        reply_markup=keyboard_grade
+    )
+
+def get_exam(message, grade):
+    grade = grade.split()[0]
+
     keyboard_exam = types.InlineKeyboardMarkup()
 
-    btn_oge = types.InlineKeyboardButton(text="ОГЭ", callback_data="oge")
-    btn_ege = types.InlineKeyboardButton(text="ЕГЭ", callback_data="ege")
+    btn_math_oge = types.InlineKeyboardButton(text="Математика ОГЭ", callback_data="math_oge")
+    btn_math_ege = types.InlineKeyboardButton(text="Математика ЕГЭ", callback_data="math_ege")
+    btn_physics_oge = types.InlineKeyboardButton(text="Физика ОГЭ", callback_data="physics_oge")
+    btn_physics_ege = types.InlineKeyboardButton(text="Физика ЕГЭ", callback_data="physics_ege")
+    btn_poll_end = types.InlineKeyboardButton(text="Закончить опрос", callback_data="poll_end")
 
-    keyboard_exam.add(btn_oge)
-    keyboard_exam.add(btn_ege)
+    keyboard_exam.add(btn_math_ege)
+    keyboard_exam.add(btn_physics_ege)
+    keyboard_exam.add(btn_math_oge)
+    keyboard_exam.add(btn_physics_oge)
+    keyboard_exam.add(btn_poll_end)
 
     return bot.send_message(
         message.chat.id,
-        f"Отлично, Ваша разница с Москвой в {timezone} час/а/ов!"
-        "\n\nУкажите Ваш уровень подготовки.",
+        f"Здорово, ты учишься в {grade} классе!"
+        "\n\nКакие курсы тебя интересуют?",
         reply_markup=keyboard_exam
-    )
-
-def get_subject(message, exam):
-    keyboard_subj = types.InlineKeyboardMarkup()
-
-    btn_math = types.InlineKeyboardButton(text="Математика", callback_data="math")
-    btn_physics = types.InlineKeyboardButton(text="Физика", callback_data="physics")
-
-    keyboard_subj.add(btn_math)
-    keyboard_subj.add(btn_physics)
-
-    return bot.send_message(
-        message.chat.id,
-        f"Отлично, Ваш уровень подготовки {exam}!"
-        "\n\nУкажите интересующий Вас предмет.",
-        reply_markup=keyboard_subj
-    )
-
-def end_poll(message, subject):
-    subj_dict = {
-        "math": "математика",
-        "physics": "физика",
-    }
-    return bot.send_message(
-        message.chat.id,
-        f"Отлично, Ваc интересует {subj_dict[subject]}!"
-        "\n\nСпасибо за прохождение опроса! Наш менеджер скоро свяжется с Вами.",
     )
 
 @bot.callback_query_handler(func=lambda call:True)
@@ -180,16 +202,13 @@ def callback_worker(call):
     elif call.data >= "15" and call.data <= "18":
         age = call.data
         return get_timezone(call.message, age)
+    elif call.data == "9 grade" or call.data == "10 grade" or call.data == "11 grade":
+        grade = call.data
+        return get_exam(call.message, grade)
     elif call.data >= "-1" and call.data <= "9":
         timezone = call.data
-        return get_exam(call.message, timezone)
-    elif call.data == "oge" or call.data == "ege":
-        exam = call.data
-        return get_subject(call.message, exam)
-    elif call.data == "math" or call.data == "physics":
-        subject = call.data
-        return end_poll(call.message, subject)
+        return get_grade(call.message, timezone)
     elif call.data == "back":
-        return get_text_messages(call.message)
+        return get_text_messages(call.message, call.data)
 
 bot.polling()
