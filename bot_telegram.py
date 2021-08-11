@@ -56,7 +56,7 @@ def get_info(message):
     )
 
 def get_subject_info(message, subject):
-    doc = open("test.pdf", "rb")
+    doc = open(f"{subject}.pdf", "rb")
     keyboard_subject = types.InlineKeyboardMarkup()
 
     btn_url = types.InlineKeyboardButton(text="Информация о курсе", url=f"https://antarestudy.ru/{subject}.html")
