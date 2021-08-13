@@ -1,5 +1,4 @@
 import os
-
 import telebot
 from telebot import types
 
@@ -10,6 +9,14 @@ load_dotenv()
 
 bot = telebot.TeleBot(os.getenv("TOKEN"))
 bot.remove_webhook()
+
+info = {
+    "username": "",
+    "course": "",
+    "age": "",
+    "timezone": "",
+    "grade": "",
+}
 
 @bot.message_handler(commands=["start"])
 def get_text_messages(message, data="start"):
@@ -56,10 +63,12 @@ def get_info(message):
     )
 
 def get_subject_info(message, subject):
+    info["username"] = message.json["chat"]["username"]
+    info["course"] = subject
     doc = open(f"{subject}.pdf", "rb")
     keyboard_subject = types.InlineKeyboardMarkup()
 
-    btn_url = types.InlineKeyboardButton(text="Информация о курсе", url=f"https://antarestudy.ru/{subject}.html")
+    btn_url = types.InlineKeyboardButton(text="Информация о курсе", callback_data="courses")
     btn_back = types.InlineKeyboardButton(text="На главную", callback_data="back")
 
     keyboard_subject.add(btn_url)
@@ -71,7 +80,8 @@ def get_subject_info(message, subject):
         message.chat.id,
         "Наш курс поможет тебе вместе с классными преподавателями в дружной группе получить знания по предмету и уверено подготовится к сдаче экзамена!😄"
         "\n\nЗагляни в учебный план из файла ниже, чтобы узнать подробно о распределении тем на занятиях, а также обрати внимание на скрин с тарифами, которые можно выбрать при покупке курса."
-        "\n\nБолее подробное описание ты можешь прочитать на страничке курса на нашем сайте:",
+        "\n\nБолее подробное описание ты можешь прочитать на страничке курса на нашем сайте:"
+        f"https://antarestudy.ru/{subject}.html",
         reply_markup=keyboard_subject
     )
     bot.send_document(message.chat.id, doc)
@@ -82,7 +92,7 @@ def get_subject_info(message, subject):
         )
     return bot.send_message(
         message.chat.id,
-        "Почему ты обратил внимание именно на нашу школу?",
+        "Почему ты обратил внимание именно на нашу школу? (Напиши боту)",
     )
 
 def get_age(message):
@@ -112,6 +122,7 @@ def get_age(message):
     )
 
 def get_timezone(message, age):
+    info["age"] = age
     keyboard_timezone = types.InlineKeyboardMarkup()
 
     btn_neg1 = types.InlineKeyboardButton(text="МСК -1", callback_data="-1")
@@ -142,12 +153,12 @@ def get_timezone(message, age):
 
     return bot.send_message(
         message.chat.id,
-        f"Здорово, тебе {age} лет!"
         "\n\n А теперь выбери свой часовой пояс:",
         reply_markup=keyboard_timezone
     )
 
 def get_grade(message, timezone):
+    info["timezone"] = timezone
     keyboard_grade = types.InlineKeyboardMarkup()
 
     btn_9 = types.InlineKeyboardButton(text="9", callback_data="9 grade")
@@ -162,13 +173,13 @@ def get_grade(message, timezone):
 
     return bot.send_message(
         message.chat.id,
-        f"Здорово, твоя разница с Москвой в {timezone} час/а/ов!"
         "\n\nВ каком классе ты учишься?",
         reply_markup=keyboard_grade
     )
 
 def get_exam(message, grade):
     grade = grade.split()[0]
+    info["grade"] = grade
 
     keyboard_exam = types.InlineKeyboardMarkup()
 
@@ -186,14 +197,13 @@ def get_exam(message, grade):
 
     return bot.send_message(
         message.chat.id,
-        f"Здорово, ты учишься в {grade} классе!"
         "\n\nКакие курсы тебя интересуют?",
         reply_markup=keyboard_exam
     )
 
 @bot.callback_query_handler(func=lambda call:True)
 def callback_worker(call):
-    if call.data == "info":
+    if call.data == "info" or call.data == "courses":
         return get_info(call.message)
     elif call.data == "math_oge" or call.data == "math_ege" or call.data == "physics_oge" or call.data == "physics_ege":
         return get_subject_info(call.message, call.data)
@@ -208,7 +218,11 @@ def callback_worker(call):
     elif call.data >= "-1" and call.data <= "9":
         timezone = call.data
         return get_grade(call.message, timezone)
-    elif call.data == "back":
+    elif call.data == "back" or "poll_end":
+        with open('bot.csv', 'w') as output:
+            for k, v in info.items():
+                output.write(f"{k}: {v}\n")
+            output.write("\n")
         return get_text_messages(call.message, call.data)
 
 bot.polling()
