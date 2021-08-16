@@ -65,7 +65,10 @@ def get_info(message):
 def get_subject_info(message, subject):
     info["username"] = message.json["chat"]["username"]
     info["course"] = subject
+
     doc = open(f"{subject}.pdf", "rb")
+    img = open("tarif.jpg", "rb")
+
     keyboard_subject = types.InlineKeyboardMarkup()
 
     btn_url = types.InlineKeyboardButton(text="Информация о курсе", callback_data="courses")
@@ -85,6 +88,7 @@ def get_subject_info(message, subject):
         reply_markup=keyboard_subject
     )
     bot.send_document(message.chat.id, doc)
+    bot.send_photo(message.chat.id, img)
     if "Здорово, ты учишься" not in message.json["text"]:
         return bot.send_message(
             message.chat.id,
