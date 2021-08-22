@@ -63,7 +63,7 @@ def get_info(message):
 def get_subject_info(message, subject):
 
     doc = open(f"{subject}.pdf", "rb")
-    img = open("tarif.jpg", "rb")
+    img = open(f"{subject}.png", "rb")
 
     keyboard_subject = types.InlineKeyboardMarkup()
 
